@@ -12,7 +12,23 @@ use yii\helpers\Json;
 class FileInput extends InputWidget
 {
     public $clientOptions = [];
+    public $domain='';
+    public $uploadUrl='';
     public $chooseButtonClass = ['class' => 'btn-default'];
+    public $baseConfig=[];
+    public $delimiter =',';
+    public $defaultBaseConfig = [
+        'defaultImage' => 'http://img1.imgtn.bdimg.com/it/u=2056478505,162569476&fm=26&gp=0.jpg',
+        'disableGlobalDnd' => true,
+        'accept' => [
+            'title' => 'Images',
+            'extensions' => 'gif,jpg,jpeg,bmp,png',
+            'mimeTypes' => 'image/*',
+        ],
+        'pick' => [
+            'multiple' => false,
+        ],
+    ];
     private $_view;
     private $_hashVar;
     private $_encOptions;
@@ -63,8 +79,8 @@ class FileInput extends InputWidget
      */
     public function initConfig ()
     {
-        if (empty(Yii::$app->params['domain'])) {
-            throw new InvalidConfigException("param `domain` must set.", 1);
+        if (empty($this->domain)) {
+            throw new InvalidConfigException("domain` must set.", 1);
         }
         $this->_config = $this->mergeConfig();
         $config = Json::htmlEncode($this->_config);
@@ -104,7 +120,10 @@ JS;
         $config['modal_id'] = $this->_hashVar;
 
         if (empty($config['server'])) {
-            $uploadUrl = Yii::$app->params['webuploader']['uploadUrl'];
+            if(empty($this->uploadUrl)){
+                throw new InvalidConfigException("后台处理理由必须进行设置.", 2);
+            }
+            $uploadUrl = $this->uploadUrl;
             $config['server'] = Url::to([$uploadUrl]);
         }
 
@@ -137,7 +156,8 @@ JS;
      */
     public function getDefaultClientOptions ()
     {
-        return Yii::$app->params['webuploader']['baseConfig'];
+        $this->baseConfig=array_merge($this->defaultBaseConfig,$this->baseConfig);
+        return $this->baseConfig;
     }
 
     /**
@@ -173,10 +193,10 @@ JS;
      */
     public function renderImage ($model, $attribute)
     {
-        $src = Yii::$app->params['webuploader']['baseConfig']['defaultImage'];
+        $src = $this->baseConfig['defaultImage'];
         $eles = [];
         if (($value = $model->$attribute)) {
-            $src = $this->_validateUrl($value) ? $value : Yii::$app->params['domain'] . $value;
+            $src = $this->_validateUrl($value) ? $value :$this->domain . $value;
         }
         $eles[] = Html::img($src, ['class' => 'img-responsive img-thumbnail cus-img']);
         $eles[] = Html::tag('em', 'x', ['class' => 'close delImage', 'title' => '删除这张图片']);
@@ -195,11 +215,11 @@ JS;
         $srcTmp = $model->$attribute;
         $items = [];
         if ($srcTmp) {
-            is_string($srcTmp) && $srcTmp = explode(Yii::$app->params['webuploader']['delimiter'], $srcTmp);
+            is_string($srcTmp) && $srcTmp = explode($this->delimiter, $srcTmp);
             $inputName = Html::getInputName($model, $attribute);
             foreach ($srcTmp as $k => $v) {
-                $dv = $this->_validateUrl($v) ? $v : Yii::$app->params['domain'] . $v;
-                $src = $v ? $dv : Yii::$app->params['webuploader']['baseConfig']['defaultImage'];
+                $dv = $this->_validateUrl($v) ? $v : $this->domain. $v;
+                $src = $v ? $dv : $this->baseConfig['defaultImage'];
                 $eles = [];
                 $eles[] = Html::img($src, ['class' => 'img-responsive img-thumbnail cus-img']);
                 $eles[] = Html::hiddenInput($inputName . "[]", $v);
