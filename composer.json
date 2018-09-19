@@ -13,6 +13,6 @@
         "yiisoft/yii2": ">=2.0.4"
     },
     "autoload": {
-        "psr-4": { "bfyang5130\\": "" }
+        "psr-4": { "bfyang5130\\webuploader": "" }
     }
 }
