@@ -17,6 +17,7 @@ class FileInputAsset extends AssetBundle
     ];
     public $depends = [
         'yii\bootstrap\BootstrapPluginAsset',
+		'yii\web\JqueryAsset',
     ];
 
     /**
