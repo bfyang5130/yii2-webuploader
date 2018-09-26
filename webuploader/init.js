@@ -1,5 +1,4 @@
-jQuery(function() {
-    var $ = jQuery;
+(function($) {
     $.fn.webupload_fileinput = function (config) {
         $('body').append(renderModal());
         var _modal = $('#' + config['modal_id']),
@@ -495,4 +494,4 @@ jQuery(function() {
             $('.modal-c').find('.modal-body').html('');
         });
     };
-});
+})(jQuery);
