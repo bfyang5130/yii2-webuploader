@@ -10,6 +10,7 @@ use yii\helpers\Url;
 use yii\helpers\Json;
 use yii\helpers\ArrayHelper;
 use yii\web\Response;
+use bfyang5130\webuploader\OSS;
 
 class FileUploadAction extends Action
 {
@@ -57,11 +58,29 @@ class FileUploadAction extends Action
     {
        $result = $this->actionUpload();
        if(is_array($result)&&isset($result['state'])&&$result['state']=='SUCCESS'){
-           $rw_result=[
-               'code'=>0,
-               "url"=>isset($this->config['imageUrlPrefix'])?$this->config['imageUrlPrefix'].$result['url']:$result['url'],
-               "attachment"=> isset($this->config['imageUrlPrefix'])?$this->config['imageUrlPrefix'].$result['url']:$result['url']
-           ];
+           if(isset($this->config['aliyunoss'])&&$this->config['aliyunoss']===true){
+               if($this->ossALiyun($result)){
+                   $rw_result=[
+                       'code'=>0,
+                       "url"=>isset(Yii::$app->params['oss']['ossOutLink'])?Yii::$app->params['oss']['ossOutLink'].$result['url']:$result['url'],
+                       "attachment"=> isset(Yii::$app->params['oss']['ossOutLink'])?Yii::$app->params['oss']['ossOutLink'].$result['url']:$result['url']
+                   ];
+               }else{
+                   $rw_result=[
+                       'code'=>1,
+                       "msg"=>'上传失败'
+                   ];
+               }
+
+               @unlink($this->config['imageRoot'].$result['url']);
+           }else{
+               return $rw_result=[
+                   'code'=>0,
+                   "url"=>isset($this->config['imageUrlPrefix'])?$this->config['imageUrlPrefix'].$result['url']:$result['url'],
+                   "attachment"=> isset($this->config['imageUrlPrefix'])?$this->config['imageUrlPrefix'].$result['url']:$result['url']
+               ];
+           }
+
        }else{
            $rw_result=[
                'code'=>1,
@@ -102,5 +121,18 @@ class FileUploadAction extends Action
 
         /* 返回数据 */
         return $up->getFileInfo();
+    }
+
+    protected function ossALiyun($result){
+          try{
+              if(stripos($result['url'],'/')==0){
+                  $newUrl=substr($result['url'],'1');
+              }
+              $result=OSS::upload($newUrl, $this->config['imageRoot'].$result['url']);
+              return true;
+          }catch (\Exception $e){
+              \Yii::error($e);
+              return false;
+          }
     }
 }
